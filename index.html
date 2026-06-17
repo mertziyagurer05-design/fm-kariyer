@@ -1153,20 +1153,33 @@ function renderDashboard() {
 
   const ppg = tots.matches ? (tots.pts / tots.matches).toFixed(2) : '—';
   const winPct = tots.matches ? Math.round(tots.wins / tots.matches * 100) + '%' : '—';
-  const or = (manual, auto) => (manual != null && manual !== '') ? manual : auto;
 
-  setEl('st-matches', or(c.manual_matches, tots.matches));
-  setEl('st-wins', or(c.manual_wins, tots.wins));
-  setEl('st-draws', or(c.manual_draws, tots.draws));
-  setEl('st-losses', or(c.manual_losses, tots.losses));
-  setEl('st-winpct', c.manual_wins != null && c.manual_matches != null ? Math.round(c.manual_wins/c.manual_matches*100)+'%' : winPct);
-  setEl('st-gf', or(c.manual_gf, tots.gf));
-  setEl('st-ga', or(c.manual_ga, tots.ga));
-  setEl('st-trophies', or(c.manual_trophies, DB.trophies.length));
-  setEl('st-leagues', or(c.manual_leagues, DB.seasons.filter(s => s.league_champion).length));
+  // Manuel + otomatik toplama
+  const add = (manual, auto) => (manual != null && manual !== '') ? (manual + auto) : auto;
+
+  const totalMatches = add(c.manual_matches, tots.matches);
+  const totalWins = add(c.manual_wins, tots.wins);
+  const totalDraws = add(c.manual_draws, tots.draws);
+  const totalLosses = add(c.manual_losses, tots.losses);
+  const totalGF = add(c.manual_gf, tots.gf);
+  const totalGA = add(c.manual_ga, tots.ga);
+  const totalTrophies = add(c.manual_trophies, DB.trophies.length);
+  const totalLeagues = add(c.manual_leagues, DB.seasons.filter(s => s.league_champion).length);
+  const totalWinPct = totalMatches ? Math.round(totalWins / totalMatches * 100) + '%' : '—';
+  const totalPpg = totalMatches ? ((tots.pts + (c.manual_matches ? c.manual_wins * 3 + c.manual_draws : 0)) / totalMatches).toFixed(2) : '—';
+
+  setEl('st-matches', totalMatches);
+  setEl('st-wins', totalWins);
+  setEl('st-draws', totalDraws);
+  setEl('st-losses', totalLosses);
+  setEl('st-winpct', totalWinPct);
+  setEl('st-gf', totalGF);
+  setEl('st-ga', totalGA);
+  setEl('st-trophies', totalTrophies);
+  setEl('st-leagues', totalLeagues);
   setEl('st-clubs', DB.stints.length);
   setEl('st-seasons', DB.seasons.length);
-  setEl('st-ppg', ppg);
+  setEl('st-ppg', totalPpg);
 
   // Clubs timeline
   const ct = document.getElementById('clubs-timeline');
@@ -1804,17 +1817,28 @@ function renderProfile() {
   const bestClub = stintStats.sort((a,b)=>b.pct-a.pct)[0];
   const longestClub = stintStats.sort((a,b)=>(b.end_year||2099)-(b.start_year||0) - ((a.end_year||2099)-(a.start_year||0)))[0];
 
+  const c = DB.career;
+  const addVal = (manual, auto) => (manual != null && manual !== '') ? (manual + auto) : auto;
+  const pTotalMatches = addVal(c.manual_matches, tots.matches);
+  const pTotalWins = addVal(c.manual_wins, tots.wins);
+  const pTotalGF = addVal(c.manual_gf, tots.gf);
+  const pTotalGA = addVal(c.manual_ga, tots.ga);
+  const pTotalTrophies = addVal(c.manual_trophies, DB.trophies.length);
+  const pTotalLeagues = addVal(c.manual_leagues, DB.seasons.filter(s => s.league_champion).length);
+  const pWinPct = pTotalMatches ? Math.round(pTotalWins / pTotalMatches * 100) : 0;
+  const pPpg = pTotalMatches ? ((tots.pts + (c.manual_matches ? c.manual_wins * 3 + (c.manual_draws||0) : 0)) / pTotalMatches).toFixed(2) : 0;
+
   document.getElementById('profile-stats').innerHTML = `
-    <div class="stat-box"><div class="stat-val green">${tots.matches}</div><div class="stat-lbl">Toplam Maç</div></div>
-    <div class="stat-box"><div class="stat-val green">${tots.matches?Math.round(tots.wins/tots.matches*100):0}%</div><div class="stat-lbl">Galibiyet %</div></div>
-    <div class="stat-box"><div class="stat-val gold">${DB.trophies.length}</div><div class="stat-lbl">Toplam Kupa</div></div>
-    <div class="stat-box"><div class="stat-val gold">${DB.seasons.filter(s=>s.league_champion).length}</div><div class="stat-lbl">Lig Şampiyonluğu</div></div>
-    <div class="stat-box"><div class="stat-val">${tots.gf}</div><div class="stat-lbl">Atılan Gol</div></div>
-    <div class="stat-box"><div class="stat-val">${tots.ga}</div><div class="stat-lbl">Yenilen Gol</div></div>
-    <div class="stat-box"><div class="stat-val">${tots.matches?(tots.pts/tots.matches).toFixed(2):0}</div><div class="stat-lbl">Maç Başı Puan</div></div>
+    <div class="stat-box"><div class="stat-val green">${pTotalMatches}</div><div class="stat-lbl">Toplam Maç</div></div>
+    <div class="stat-box"><div class="stat-val green">${pWinPct}%</div><div class="stat-lbl">Galibiyet %</div></div>
+    <div class="stat-box"><div class="stat-val gold">${pTotalTrophies}</div><div class="stat-lbl">Toplam Kupa</div></div>
+    <div class="stat-box"><div class="stat-val gold">${pTotalLeagues}</div><div class="stat-lbl">Lig Şampiyonluğu</div></div>
+    <div class="stat-box"><div class="stat-val">${pTotalGF}</div><div class="stat-lbl">Atılan Gol</div></div>
+    <div class="stat-box"><div class="stat-val">${pTotalGA}</div><div class="stat-lbl">Yenilen Gol</div></div>
+    <div class="stat-box"><div class="stat-val">${pPpg}</div><div class="stat-lbl">Maç Başı Puan</div></div>
     <div class="stat-box"><div class="stat-val">${DB.stints.length}</div><div class="stat-lbl">Kulüp</div></div>
     <div class="stat-box"><div class="stat-val">${DB.matches.filter(m=>m.is_derby&&m.result==='G').length}</div><div class="stat-lbl">Derbi Galibiyeti</div></div>
-    <div class="stat-box"><div class="stat-val">${DB.matches.filter(m=>m.is_derby).length||0 ? Math.round(DB.matches.filter(m=>m.is_derby&&m.result==='G').length/DB.matches.filter(m=>m.is_derby).length*100)+'%' : '—'}</div><div class="stat-lbl">Derbi Galibiyet %</div></div>
+    <div class="stat-box"><div class="stat-val">${DB.matches.filter(m=>m.is_derby).length ? Math.round(DB.matches.filter(m=>m.is_derby&&m.result==='G').length/DB.matches.filter(m=>m.is_derby).length*100)+'%' : '—'}</div><div class="stat-lbl">Derbi Galibiyet %</div></div>
     <div class="stat-box"><div class="stat-val">${DB.matches.filter(m=>m.clean_sheet).length}</div><div class="stat-lbl">Clean Sheet</div></div>
     <div class="stat-box"><div class="stat-val">${DB.matches.filter(m=>m.comeback).length}</div><div class="stat-lbl">Geriden Gelen</div></div>
   `;
