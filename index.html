@@ -1817,16 +1817,15 @@ function renderProfile() {
   const bestClub = stintStats.sort((a,b)=>b.pct-a.pct)[0];
   const longestClub = stintStats.sort((a,b)=>(b.end_year||2099)-(b.start_year||0) - ((a.end_year||2099)-(a.start_year||0)))[0];
 
-  const c = DB.career;
   const addVal = (manual, auto) => (manual != null && manual !== '') ? (manual + auto) : auto;
-  const pTotalMatches = addVal(c.manual_matches, tots.matches);
-  const pTotalWins = addVal(c.manual_wins, tots.wins);
-  const pTotalGF = addVal(c.manual_gf, tots.gf);
-  const pTotalGA = addVal(c.manual_ga, tots.ga);
-  const pTotalTrophies = addVal(c.manual_trophies, DB.trophies.length);
-  const pTotalLeagues = addVal(c.manual_leagues, DB.seasons.filter(s => s.league_champion).length);
+  const pTotalMatches = addVal(DB.career.manual_matches, tots.matches);
+  const pTotalWins = addVal(DB.career.manual_wins, tots.wins);
+  const pTotalGF = addVal(DB.career.manual_gf, tots.gf);
+  const pTotalGA = addVal(DB.career.manual_ga, tots.ga);
+  const pTotalTrophies = addVal(DB.career.manual_trophies, DB.trophies.length);
+  const pTotalLeagues = addVal(DB.career.manual_leagues, DB.seasons.filter(s => s.league_champion).length);
   const pWinPct = pTotalMatches ? Math.round(pTotalWins / pTotalMatches * 100) : 0;
-  const pPpg = pTotalMatches ? ((tots.pts + (c.manual_matches ? c.manual_wins * 3 + (c.manual_draws||0) : 0)) / pTotalMatches).toFixed(2) : 0;
+  const pPpg = pTotalMatches ? ((tots.pts + (DB.career.manual_matches ? DB.career.manual_wins * 3 + (DB.career.manual_draws||0) : 0)) / pTotalMatches).toFixed(2) : 0;
 
   document.getElementById('profile-stats').innerHTML = `
     <div class="stat-box"><div class="stat-val green">${pTotalMatches}</div><div class="stat-lbl">Toplam Maç</div></div>
