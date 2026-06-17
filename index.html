@@ -375,6 +375,71 @@ textarea { resize: vertical; min-height: 80px; }
   .hero-title { font-size: 26px; }
 }
 
+/* ── TROPHY SHOWCASE ── */
+.trophy-section-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted); margin: 2rem 0 1rem;
+  display: flex; align-items: center; gap: 12px;
+}
+.trophy-section-title::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+.trophy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+.trophy-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+  position: relative; overflow: hidden;
+  transition: border-color .2s, transform .2s;
+  cursor: default;
+}
+.trophy-card:hover { transform: translateY(-3px); }
+.trophy-card.type-Lig {
+  border-color: rgba(245,197,24,0.3);
+  background: linear-gradient(135deg, rgba(245,197,24,0.06), transparent);
+}
+.trophy-card.type-Avrupa {
+  border-color: rgba(74,158,255,0.3);
+  background: linear-gradient(135deg, rgba(74,158,255,0.06), transparent);
+}
+.trophy-card.type-Kupa {
+  border-color: rgba(0,214,143,0.3);
+  background: linear-gradient(135deg, rgba(0,214,143,0.06), transparent);
+}
+.trophy-card.type-Süper-Kupa {
+  border-color: rgba(255,71,87,0.3);
+  background: linear-gradient(135deg, rgba(255,71,87,0.06), transparent);
+}
+.trophy-card-icon {
+  font-size: 42px; margin-bottom: .75rem; display: block;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+}
+.trophy-card-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px; font-weight: 700; line-height: 1.3; margin-bottom: 6px;
+}
+.trophy-card-meta {
+  font-size: 11px; color: var(--muted); margin-top: 4px;
+}
+.trophy-card-delete {
+  position: absolute; top: 8px; right: 8px;
+  opacity: 0; transition: opacity .2s;
+}
+.trophy-card:hover .trophy-card-delete { opacity: 1; }
+.trophy-count-badge {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(0,0,0,0.4); border: 1px solid var(--border2);
+  border-radius: 20px; padding: 2px 8px;
+  font-size: 11px; font-weight: 700; color: var(--muted2);
+}
+
 /* ── EDIT INLINE ── */
 .editable { cursor: pointer; border-bottom: 1px dashed var(--border2); }
 .editable:hover { border-bottom-color: var(--green); color: var(--green); }
@@ -637,7 +702,7 @@ textarea { resize: vertical; min-height: 80px; }
 ════════════════════════════════════════════ -->
 <div class="page" id="page-trophies">
   <div class="container">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;">
       <div>
         <div class="section-title">Başarılar</div>
         <h2 style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;">Kupa Dolabı</h2>
@@ -645,14 +710,28 @@ textarea { resize: vertical; min-height: 80px; }
       <button class="btn btn-primary" onclick="openModal('trophy-modal')">+ Kupa Ekle</button>
     </div>
 
-    <div class="stat-grid" style="margin-bottom:1.5rem;">
-      <div class="stat-box"><div class="stat-val gold" id="tc-total">—</div><div class="stat-lbl">Toplam Kupa</div></div>
-      <div class="stat-box"><div class="stat-val gold" id="tc-league">—</div><div class="stat-lbl">Lig Şampiyonluğu</div></div>
-      <div class="stat-box"><div class="stat-val" id="tc-europe">—</div><div class="stat-lbl">Avrupa Kupası</div></div>
-      <div class="stat-box"><div class="stat-val" id="tc-cup">—</div><div class="stat-lbl">Kupa</div></div>
+    <!-- Özet istatistikler -->
+    <div class="stat-grid" style="margin-bottom:2rem;">
+      <div class="stat-box" style="border-top:2px solid var(--gold);">
+        <div class="stat-val gold" id="tc-total">—</div>
+        <div class="stat-lbl">Toplam Kupa</div>
+      </div>
+      <div class="stat-box" style="border-top:2px solid var(--gold);">
+        <div class="stat-val gold" id="tc-league">—</div>
+        <div class="stat-lbl">Lig Şampiyonluğu</div>
+      </div>
+      <div class="stat-box" style="border-top:2px solid var(--blue);">
+        <div class="stat-val" style="color:var(--blue)" id="tc-europe">—</div>
+        <div class="stat-lbl">Avrupa Kupası</div>
+      </div>
+      <div class="stat-box" style="border-top:2px solid var(--green);">
+        <div class="stat-val green" id="tc-cup">—</div>
+        <div class="stat-lbl">Ulusal Kupa</div>
+      </div>
     </div>
 
-    <div class="card" id="trophies-list"><div class="empty">Henüz kupa yok.</div></div>
+    <!-- Kupa showcase -->
+    <div id="trophies-showcase"></div>
   </div>
 </div>
 
@@ -1517,23 +1596,60 @@ function calcResult2(gf, ga) {
 // ═══════════════════════════════════════════
 function renderTrophies() {
   const icons = { Lig: '🏆', Kupa: '🥈', Avrupa: '⭐', 'Süper Kupa': '🛡', Diğer: '🎖' };
+  const colors = { Lig: 'var(--gold)', Avrupa: 'var(--blue)', Kupa: 'var(--green)', 'Süper Kupa': 'var(--red)', Diğer: 'var(--muted2)' };
+
   setEl('tc-total', DB.trophies.length);
   setEl('tc-league', DB.trophies.filter(t => t.trophy_type === 'Lig').length);
   setEl('tc-europe', DB.trophies.filter(t => t.trophy_type === 'Avrupa').length);
   setEl('tc-cup', DB.trophies.filter(t => t.trophy_type === 'Kupa').length);
-  const el = document.getElementById('trophies-list');
-  el.innerHTML = DB.trophies.length ? DB.trophies.map(t => `
-    <div class="trophy-item">
-      <div class="trophy-icon">${icons[t.trophy_type]||'🏅'}</div>
-      <div style="flex:1">
-        <div style="font-weight:600;font-size:14px;">${t.trophy_name}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;">${[t.club_name, t.season_label].filter(Boolean).join(' · ')}</div>
-        ${t.notes ? `<div style="font-size:12px;color:var(--muted2);">${t.notes}</div>` : ''}
-      </div>
-      <div class="trophy-actions">
-        <button class="btn btn-danger btn-sm" onclick="deleteTrophy('${t.id}')">Sil</button>
-      </div>
-    </div>`).join('') : '<div class="empty">Henüz kupa yok.</div>';
+
+  const showcase = document.getElementById('trophies-showcase');
+  if (!DB.trophies.length) {
+    showcase.innerHTML = `<div class="empty"><div class="e-icon">🏆</div>Henüz kupa yok. İlk kupanı ekle!</div>`;
+    return;
+  }
+
+  const order = ['Lig', 'Avrupa', 'Süper Kupa', 'Kupa', 'Diğer'];
+  const labels = { Lig: 'Lig Şampiyonlukları', Avrupa: 'Avrupa Kupaları', 'Süper Kupa': 'Süper Kupalar', Kupa: 'Ulusal Kupalar', Diğer: 'Diğer Başarılar' };
+
+  let html = '';
+  order.forEach(type => {
+    const group = DB.trophies.filter(t => t.trophy_type === type);
+    if (!group.length) return;
+
+    // Aynı kupadan birden fazla varsa grupla
+    const grouped = {};
+    group.forEach(t => {
+      const key = t.trophy_name;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(t);
+    });
+
+    html += `<div class="trophy-section-title">${icons[type]||'🎖'} ${labels[type]||type}</div>`;
+    html += `<div class="trophy-grid">`;
+
+    Object.entries(grouped).forEach(([name, items]) => {
+      const count = items.length;
+      const seasons = items.map(t => t.season_label).filter(Boolean).join(', ');
+      const clubs = [...new Set(items.map(t => t.club_name).filter(Boolean))].join(', ');
+      const notes = items[0].notes;
+      const typeClass = type.replace(' ', '-');
+
+      html += `<div class="trophy-card type-${typeClass}">
+        ${count > 1 ? `<div class="trophy-count-badge">×${count}</div>` : ''}
+        <button class="trophy-card-delete btn btn-danger btn-sm" onclick="deleteTrophy('${items[items.length-1].id}')">✕</button>
+        <span class="trophy-card-icon">${icons[type]||'🎖'}</span>
+        <div class="trophy-card-name" style="color:${colors[type]||'var(--text)'};">${name}</div>
+        ${clubs ? `<div class="trophy-card-meta">${clubs}</div>` : ''}
+        ${seasons ? `<div class="trophy-card-meta" style="margin-top:4px;">${seasons}</div>` : ''}
+        ${notes ? `<div class="trophy-card-meta" style="margin-top:6px;font-style:italic;">"${notes}"</div>` : ''}
+      </div>`;
+    });
+
+    html += `</div>`;
+  });
+
+  showcase.innerHTML = html;
 }
 
 // ═══════════════════════════════════════════
