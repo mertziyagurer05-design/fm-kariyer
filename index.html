@@ -948,6 +948,7 @@ textarea { resize: vertical; min-height: 80px; }
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Detaylar</div>
       </div>
       <div class="form-group"><label>Gol Atanlar</label><input id="m-scorers" placeholder="ör. Suarez 22', 45'"></div>
+      <div class="form-group"><label>Rakip Teknik Direktör</label><input id="m-opp-manager" placeholder="ör. Zinedine Zidane"></div>
       <div class="form-group"><label>Seyirci</label><input id="m-att" type="number"></div>
 
       <!-- POSSESSION -->
@@ -1526,6 +1527,7 @@ function matchRow(m, myClubName) {
           <span class="badge ${haClass}">${haLabel}</span>
           ${m.competition ? `<span style="font-size:11px;color:var(--muted);">${m.competition}</span>` : ''}
           ${m.match_date ? `<span style="font-size:11px;color:var(--muted);">${m.match_date}</span>` : ''}
+          ${m.opponent_manager ? `<span style="font-size:11px;color:var(--muted);">👤 ${m.opponent_manager}</span>` : ''}
         </div>
         ${m.is_derby || m.is_special ? `<div class="sb-badges">
           ${m.is_derby ? '<span class="badge badge-red">Derbi</span>' : ''}
@@ -1575,45 +1577,78 @@ function applyFilters() {
   let list = [...DB.matches].filter(m => !m.is_special);
   const search = document.getElementById('match-search')?.value?.toLowerCase().trim() || '';
 
-  // Rakip istatistik paneli
   const statsPanel = document.getElementById('opponent-stats-panel');
+
   if (search.length >= 2) {
-    const oppMatches = DB.matches.filter(m => m.opponent?.toLowerCase().includes(search));
-    if (oppMatches.length) {
-      const w = oppMatches.filter(m => m.result === 'G').length;
-      const d = oppMatches.filter(m => m.result === 'B').length;
-      const l = oppMatches.filter(m => m.result === 'M').length;
-      const total = oppMatches.length;
-      const gf = oppMatches.reduce((a,m) => a+(m.goals_for||0), 0);
-      const ga = oppMatches.reduce((a,m) => a+(m.goals_against||0), 0);
+    // Takım mı, teknik direktör mü?
+    const byTeam = DB.matches.filter(m => m.opponent?.toLowerCase().includes(search));
+    const byManager = DB.matches.filter(m => m.opponent_manager?.toLowerCase().includes(search));
+    const isManagerSearch = byManager.length > 0 && byTeam.length === 0;
+    const targetMatches = isManagerSearch ? byManager : byTeam;
+    const targetLabel = isManagerSearch
+      ? (byManager[0]?.opponent_manager || search)
+      : (byTeam[0]?.opponent || search);
+    const targetSub = isManagerSearch ? 'Teknik Direktör' : 'Rakip Takım';
+
+    if (targetMatches.length) {
+      const w = targetMatches.filter(m => m.result === 'G').length;
+      const d = targetMatches.filter(m => m.result === 'B').length;
+      const l = targetMatches.filter(m => m.result === 'M').length;
+      const total = targetMatches.length;
+      const gf = targetMatches.reduce((a,m) => a+(m.goals_for||0), 0);
+      const ga = targetMatches.reduce((a,m) => a+(m.goals_against||0), 0);
       const pts = w*3 + d;
       const winPct = Math.round(w/total*100);
       const ppg = (pts/total).toFixed(2);
       const gpg = (gf/total).toFixed(2);
       const gapg = (ga/total).toFixed(2);
-      const cleanSheets = oppMatches.filter(m => m.clean_sheet).length;
-      const derbies = oppMatches.filter(m => m.is_derby).length;
-      const bestWin = oppMatches.filter(m=>m.result==='G').sort((a,b)=>(b.goals_for-b.goals_against)-(a.goals_for-a.goals_against))[0];
-      const worstLoss = oppMatches.filter(m=>m.result==='M').sort((a,b)=>(b.goals_against-b.goals_for)-(a.goals_against-a.goals_for))[0];
-      const homeW = oppMatches.filter(m=>m.home_away==='Ev'&&m.result==='G').length;
-      const homeTotal = oppMatches.filter(m=>m.home_away==='Ev').length;
-      const awayW = oppMatches.filter(m=>m.home_away==='Deplasman'&&m.result==='G').length;
-      const awayTotal = oppMatches.filter(m=>m.home_away==='Deplasman').length;
-      const oppName = oppMatches[0].opponent;
-      const oppLogo = logoCache[oppName.toLowerCase().trim()] || null;
+      const cleanSheets = targetMatches.filter(m => m.clean_sheet).length;
+      const derbies = targetMatches.filter(m => m.is_derby).length;
+
+      // xG
+      const xgMatches = targetMatches.filter(m => m.xg_for != null && m.xg_against != null);
+      const avgXgDiff = xgMatches.length
+        ? (xgMatches.reduce((a,m) => a+(m.xg_for-m.xg_against), 0) / xgMatches.length).toFixed(2)
+        : null;
+
+      // Possession
+      const possMatches = targetMatches.filter(m => m.possession_us != null);
+      const avgPoss = possMatches.length
+        ? Math.round(possMatches.reduce((a,m) => a+m.possession_us, 0) / possMatches.length)
+        : null;
+
+      // Şut
+      const shotMatches = targetMatches.filter(m => m.shots_us != null);
+      const avgShots = shotMatches.length
+        ? (shotMatches.reduce((a,m) => a+m.shots_us, 0) / shotMatches.length).toFixed(1)
+        : null;
+
+      const bestWin = targetMatches.filter(m=>m.result==='G').sort((a,b)=>(b.goals_for-b.goals_against)-(a.goals_for-a.goals_against))[0];
+      const worstLoss = targetMatches.filter(m=>m.result==='M').sort((a,b)=>(b.goals_against-b.goals_for)-(a.goals_against-a.goals_for))[0];
+      const homeW = targetMatches.filter(m=>m.home_away==='Ev'&&m.result==='G').length;
+      const homeTotal = targetMatches.filter(m=>m.home_away==='Ev').length;
+      const awayW = targetMatches.filter(m=>m.home_away==='Deplasman'&&m.result==='G').length;
+      const awayTotal = targetMatches.filter(m=>m.home_away==='Deplasman').length;
+
+      const logoUrl = !isManagerSearch ? (logoCache[targetLabel.toLowerCase().trim()] || null) : null;
+      const avatar = isManagerSearch
+        ? `<div style="width:44px;height:44px;border-radius:50%;background:rgba(74,158,255,0.15);border:1px solid rgba(74,158,255,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👤</div>`
+        : logoImg(logoUrl, targetLabel, 44);
 
       statsPanel.innerHTML = `
         <div class="card" style="margin-bottom:1.25rem;border-color:rgba(0,214,143,0.25);">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;">
-            ${logoImg(oppLogo, oppName, 44)}
+            ${avatar}
             <div>
-              <div style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:800;">${oppName}</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:2px;">${total} maç · ${derbies ? derbies+' derbi' : ''}</div>
+              <div style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:800;">${targetLabel}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;">${targetSub} · ${total} maç${derbies ? ' · ' + derbies + ' derbi' : ''}</div>
             </div>
-            <div style="margin-left:auto;display:flex;gap:8px;">
-              <span style="font-size:22px;font-weight:800;color:var(--green);">${w}</span>
-              <span style="font-size:22px;font-weight:800;color:var(--muted);">${d}</span>
-              <span style="font-size:22px;font-weight:800;color:var(--red);">${l}</span>
+            <div style="margin-left:auto;display:flex;gap:10px;align-items:center;">
+              <span style="font-size:24px;font-weight:800;color:var(--green);">${w}</span>
+              <span style="font-size:18px;color:var(--muted);">–</span>
+              <span style="font-size:24px;font-weight:800;color:var(--gold);">${d}</span>
+              <span style="font-size:18px;color:var(--muted);">–</span>
+              <span style="font-size:24px;font-weight:800;color:var(--red);">${l}</span>
             </div>
           </div>
           <div class="stat-grid" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr));">
@@ -1625,6 +1660,9 @@ function applyFilters() {
             <div class="stat-box"><div class="stat-val">${ga}</div><div class="stat-lbl">Yenilen Gol</div></div>
             <div class="stat-box"><div class="stat-val">${cleanSheets}</div><div class="stat-lbl">Clean Sheet</div></div>
             <div class="stat-box"><div class="stat-val">${pts}</div><div class="stat-lbl">Toplam Puan</div></div>
+            ${avgXgDiff !== null ? `<div class="stat-box"><div class="stat-val ${avgXgDiff>=0?'green':''}" style="${avgXgDiff<0?'color:var(--red)':''}">${avgXgDiff>=0?'+':''}${avgXgDiff}</div><div class="stat-lbl">Ort. xG Farkı</div></div>` : ''}
+            ${avgPoss !== null ? `<div class="stat-box"><div class="stat-val green">${avgPoss}%</div><div class="stat-lbl">Ort. Possession</div></div>` : ''}
+            ${avgShots !== null ? `<div class="stat-box"><div class="stat-val">${avgShots}</div><div class="stat-lbl">Ort. Şut</div></div>` : ''}
             ${homeTotal ? `<div class="stat-box"><div class="stat-val green">${Math.round(homeW/homeTotal*100)}%</div><div class="stat-lbl">Evde Galibiyet %</div></div>` : ''}
             ${awayTotal ? `<div class="stat-box"><div class="stat-val">${Math.round(awayW/awayTotal*100)}%</div><div class="stat-lbl">Deplasmanda %</div></div>` : ''}
           </div>
@@ -1632,12 +1670,12 @@ function applyFilters() {
             ${bestWin ? `<div style="flex:1;min-width:160px;background:var(--green-glow);border:1px solid rgba(0,214,143,0.2);border-radius:8px;padding:10px 14px;">
               <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--green);margin-bottom:4px;">EN BÜYÜK GALİBİYET</div>
               <div style="font-size:18px;font-weight:800;">${bestWin.goals_for}–${bestWin.goals_against}</div>
-              <div style="font-size:12px;color:var(--muted);">${bestWin.match_date||''} ${bestWin.competition||''}</div>
+              <div style="font-size:12px;color:var(--muted);">${[bestWin.opponent, bestWin.match_date, bestWin.competition].filter(Boolean).join(' · ')}</div>
             </div>` : ''}
             ${worstLoss ? `<div style="flex:1;min-width:160px;background:var(--red-dim);border:1px solid rgba(255,71,87,0.2);border-radius:8px;padding:10px 14px;">
               <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--red);margin-bottom:4px;">EN AĞIR MAĞLUBIYET</div>
               <div style="font-size:18px;font-weight:800;">${worstLoss.goals_for}–${worstLoss.goals_against}</div>
-              <div style="font-size:12px;color:var(--muted);">${worstLoss.match_date||''} ${worstLoss.competition||''}</div>
+              <div style="font-size:12px;color:var(--muted);">${[worstLoss.opponent, worstLoss.match_date, worstLoss.competition].filter(Boolean).join(' · ')}</div>
             </div>` : ''}
           </div>` : ''}
         </div>`;
@@ -1648,7 +1686,10 @@ function applyFilters() {
     statsPanel.innerHTML = '';
   }
 
-  if (search) list = list.filter(m => m.opponent?.toLowerCase().includes(search));
+  if (search) list = list.filter(m =>
+    m.opponent?.toLowerCase().includes(search) ||
+    m.opponent_manager?.toLowerCase().includes(search)
+  );
   if (activeFilters.type && activeFilters.type !== 'all') list = list.filter(m => m.competition_type === activeFilters.type);
   if (activeFilters.special === 'derby') list = list.filter(m => m.is_derby);
   if (activeFilters.special === 'comeback') list = list.filter(m => m.comeback);
@@ -2038,6 +2079,7 @@ async function saveMatch() {
     special_label: v('m-special-label'),
     goals_for: gf, goals_against: ga, result,
     scorers: v('m-scorers'), attendance: num('m-att'),
+    opponent_manager: v('m-opp-manager'),
     xg_for: parseFloat(document.getElementById('m-xgf').value)||null,
     xg_against: parseFloat(document.getElementById('m-xga').value)||null,
     possession_us: num('m-poss-us'),
@@ -2120,7 +2162,7 @@ async function editMatch(id) {
 }
 
 function resetMatchModal() {
-  ['m-opp','m-date','m-scorers','m-att','m-xgf','m-xga','m-hattrick','m-notes','m-special-label',
+  ['m-opp','m-date','m-scorers','m-att','m-opp-manager','m-xgf','m-xga','m-hattrick','m-notes','m-special-label',
    'm-poss-us','m-poss-them','m-shots-us','m-shots-us-ot','m-shots-them','m-shots-them-ot','m-ht-us','m-ht-them'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('m-poss-preview').textContent = '– : –';
   ['m-gf','m-ga','m-rc-us','m-rc-them','m-yc-us'].forEach(id => { const el=document.getElementById(id); if(el) el.value='0'; });
