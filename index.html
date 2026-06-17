@@ -949,8 +949,60 @@ textarea { resize: vertical; min-height: 80px; }
       </div>
       <div class="form-group"><label>Gol Atanlar</label><input id="m-scorers" placeholder="ör. Suarez 22', 45'"></div>
       <div class="form-group"><label>Seyirci</label><input id="m-att" type="number"></div>
+
+      <!-- POSSESSION -->
+      <div class="form-group full">
+        <label>Top Hakimiyeti</label>
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-top:6px;">
+          <div>
+            <div style="font-size:11px;color:var(--green);font-weight:600;margin-bottom:4px;">Bizim %</div>
+            <input id="m-poss-us" type="number" min="0" max="100" placeholder="ör. 58" oninput="calcPoss()" style="text-align:center;font-weight:700;color:var(--green);">
+          </div>
+          <div style="text-align:center;font-size:18px;font-weight:700;color:var(--muted);" id="m-poss-preview">– : –</div>
+          <div>
+            <div style="font-size:11px;color:var(--red);font-weight:600;margin-bottom:4px;">Rakip %</div>
+            <input id="m-poss-them" type="number" min="0" max="100" placeholder="oto" readonly style="text-align:center;font-weight:700;color:var(--red);background:rgba(255,71,87,0.05);">
+          </div>
+        </div>
+      </div>
+
+      <!-- SHOTS -->
+      <div class="form-group full">
+        <label>Şut İstatistikleri</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:6px;">
+          <div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Bizim Şut</div>
+            <input id="m-shots-us" type="number" min="0" placeholder="ör. 14" style="text-align:center;">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--green);margin-bottom:4px;">İsabetli (Biz)</div>
+            <input id="m-shots-us-ot" type="number" min="0" placeholder="ör. 6" style="text-align:center;color:var(--green);">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Rakip Şut</div>
+            <input id="m-shots-them" type="number" min="0" placeholder="ör. 8" style="text-align:center;">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--red);margin-bottom:4px;">İsabetli (Rkp)</div>
+            <input id="m-shots-them-ot" type="number" min="0" placeholder="ör. 3" style="text-align:center;color:var(--red);">
+          </div>
+        </div>
+      </div>
+
+      <!-- xG -->
       <div class="form-group"><label>xG (Bizim)</label><input id="m-xgf" type="number" step="0.1"></div>
       <div class="form-group"><label>xG (Rakip)</label><input id="m-xga" type="number" step="0.1"></div>
+
+      <!-- HALF TIME -->
+      <div class="form-group full">
+        <label>İlk Yarı Skoru</label>
+        <div style="display:grid;grid-template-columns:80px auto 80px;gap:10px;align-items:center;margin-top:6px;">
+          <input id="m-ht-us" type="number" min="0" placeholder="Biz" style="text-align:center;font-weight:700;">
+          <div style="text-align:center;font-size:16px;color:var(--muted);font-weight:700;">–</div>
+          <input id="m-ht-them" type="number" min="0" placeholder="Rkp" style="text-align:center;font-weight:700;">
+        </div>
+      </div>
+
       <div class="form-group"><label>Kırmızı Kart (Biz)</label><input id="m-rc-us" type="number" min="0" value="0"></div>
       <div class="form-group"><label>Kırmızı Kart (Onlar)</label><input id="m-rc-them" type="number" min="0" value="0"></div>
       <div class="form-group"><label>Sarı Kart (Biz)</label><input id="m-yc-us" type="number" min="0" value="0"></div>
@@ -1494,6 +1546,13 @@ function matchRow(m, myClubName) {
       </div>
     </div>
     ${m.notes ? `<div class="sb-notes">${m.notes}</div>` : ''}
+    ${(m.possession_us || m.shots_us || m.xg_for || m.ht_goals_us != null) ? `
+    <div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--muted2);">
+      ${m.possession_us != null ? `<span>🔵 Top: <strong style="color:var(--green)">${m.possession_us}%</strong> – <strong style="color:var(--red)">${m.possession_them||100-m.possession_us}%</strong></span>` : ''}
+      ${m.shots_us != null ? `<span>🎯 Şut: <strong style="color:var(--green)">${m.shots_us}${m.shots_us_ot!=null?` (${m.shots_us_ot})`:''}</strong> – <strong style="color:var(--red)">${m.shots_them||0}${m.shots_them_ot!=null?` (${m.shots_them_ot})`:''}</strong></span>` : ''}
+      ${m.xg_for != null ? `<span>📊 xG: <strong style="color:var(--green)">${m.xg_for}</strong> – <strong style="color:var(--red)">${m.xg_against||0}</strong>${m.xg_for!=null&&m.xg_against!=null?` <span style="color:${(m.xg_for-m.xg_against)>=0?'var(--green)':'var(--red)'};">(${(m.xg_for-m.xg_against)>=0?'+':''}${(m.xg_for-(m.xg_against||0)).toFixed(1)})</span>`:''}</span>` : ''}
+      ${m.ht_goals_us != null ? `<span>⏱ İY: <strong>${m.ht_goals_us}–${m.ht_goals_them||0}</strong></span>` : ''}
+    </div>` : ''}
   </div>`;
 }
 
@@ -1981,6 +2040,14 @@ async function saveMatch() {
     scorers: v('m-scorers'), attendance: num('m-att'),
     xg_for: parseFloat(document.getElementById('m-xgf').value)||null,
     xg_against: parseFloat(document.getElementById('m-xga').value)||null,
+    possession_us: num('m-poss-us'),
+    possession_them: num('m-poss-them'),
+    shots_us: num('m-shots-us'),
+    shots_us_ot: num('m-shots-us-ot'),
+    shots_them: num('m-shots-them'),
+    shots_them_ot: num('m-shots-them-ot'),
+    ht_goals_us: num('m-ht-us'),
+    ht_goals_them: num('m-ht-them'),
     red_cards_us: num('m-rc-us')||0, red_cards_them: num('m-rc-them')||0,
     yellow_cards_us: num('m-yc-us')||0,
     hat_trick_player: v('m-hattrick'),
@@ -2053,7 +2120,9 @@ async function editMatch(id) {
 }
 
 function resetMatchModal() {
-  ['m-opp','m-date','m-scorers','m-att','m-xgf','m-xga','m-hattrick','m-notes','m-special-label'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['m-opp','m-date','m-scorers','m-att','m-xgf','m-xga','m-hattrick','m-notes','m-special-label',
+   'm-poss-us','m-poss-them','m-shots-us','m-shots-us-ot','m-shots-them','m-shots-them-ot','m-ht-us','m-ht-them'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('m-poss-preview').textContent = '– : –';
   ['m-gf','m-ga','m-rc-us','m-rc-them','m-yc-us'].forEach(id => { const el=document.getElementById(id); if(el) el.value='0'; });
   ['m-special-toggle','m-comeback-toggle','m-late-toggle','m-clean-toggle','m-mgr-y-toggle','m-mgr-r-toggle'].forEach(id => document.getElementById(id)?.classList.remove('on'));
   document.getElementById('m-result-preview').style.display = 'none';
@@ -2081,7 +2150,21 @@ function toggleBtn(id) {
   }
 }
 
-function autoSetType() { /* competition type auto-set in saveMatch */ }
+function calcPoss() {
+  const us = parseInt(document.getElementById('m-poss-us').value);
+  const them = document.getElementById('m-poss-them');
+  const preview = document.getElementById('m-poss-preview');
+  if (!isNaN(us) && us >= 0 && us <= 100) {
+    const t = 100 - us;
+    them.value = t;
+    preview.textContent = `${us}% – ${t}%`;
+    preview.style.color = us > 50 ? 'var(--green)' : us < 50 ? 'var(--red)' : 'var(--muted)';
+  } else {
+    them.value = '';
+    preview.textContent = '– : –';
+    preview.style.color = 'var(--muted)';
+  }
+}
 
 function calcResult() {
   const gf = parseInt(document.getElementById('m-gf').value);
