@@ -567,7 +567,7 @@ textarea { resize: vertical; min-height: 80px; }
   <div class="container">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
       <div class="section-title">Kariyer Özeti</div>
-      <button class="btn btn-primary btn-sm" onclick="openModal('career-modal')">⚙ Kariyer Ayarları</button>
+      <button class="btn btn-primary btn-sm" onclick="openCareerModal()">⚙ Kariyer Ayarları</button>
     </div>
 
     <div class="stat-grid" id="dashboard-stats">
@@ -612,7 +612,7 @@ textarea { resize: vertical; min-height: 80px; }
         <div class="section-title">Sezonlar</div>
         <h2 style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;">Sezon Arşivi</h2>
       </div>
-      <button class="btn btn-primary" onclick="openModal('season-modal')">+ Sezon Ekle</button>
+      <button class="btn btn-primary" onclick="openSeasonModalFresh()">+ Sezon Ekle</button>
     </div>
 
     <div id="seasons-by-club"></div>
@@ -778,6 +778,21 @@ textarea { resize: vertical; min-height: 80px; }
       <div class="form-group"><label>Doğum Yeri</label><input id="cr-birth" placeholder="ör. Konya, Türkiye"></div>
       <div class="form-group"><label>Doğum Yılı</label><input id="cr-byear" type="number" placeholder="ör. 1995"></div>
       <div class="form-group"><label>Kariyer Başlangıç Yılı</label><input id="cr-cyear" type="number" placeholder="ör. 2030"></div>
+
+      <div class="form-group full" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:6px;">Dashboard Özeti — Manuel Geçersiz Kılma</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Boş bırakırsan otomatik hesaplanır. Doldurursan bu değer gösterilir.</div>
+      </div>
+      <div class="form-group"><label>Toplam Maç</label><input id="cr-matches" type="number" placeholder="Oto"></div>
+      <div class="form-group"><label>Galibiyet</label><input id="cr-wins" type="number" placeholder="Oto"></div>
+      <div class="form-group"><label>Beraberlik</label><input id="cr-draws" type="number" placeholder="Oto"></div>
+      <div class="form-group"><label>Mağlubiyet</label><input id="cr-losses" type="number" placeholder="Oto"></div>
+      <div class="form-group"><label>Atılan Gol</label><input id="cr-gf" type="number" placeholder="Oto"></div>
+      <div class="form-group"><label>Yenilen Gol</label><input id="cr-ga" type="number" placeholder="Oto"></div>
+      <div class="form-group"><label>Toplam Kupa</label><input id="cr-trophies" type="number" placeholder="Oto"></div>
+      <div class="form-group"><label>Lig Şampiyonluğu</label><input id="cr-leagues" type="number" placeholder="Oto"></div>
+      <div class="form-group"><label>Güncel Lig Durumu</label><input id="cr-league-status" placeholder="ör. 1. Sıra, 45 puan"></div>
+      <div class="form-group"><label>Güncel Avrupa Durumu</label><input id="cr-euro-status" placeholder="ör. UCL Son 16"></div>
     </div>
     <div class="form-actions">
       <button class="btn btn-ghost" onclick="closeModal('career-modal')">İptal</button>
@@ -797,6 +812,8 @@ textarea { resize: vertical; min-height: 80px; }
       <div class="form-group"></div>
       <div class="form-group"><label>Başlangıç Yılı</label><input id="st-start" type="number"></div>
       <div class="form-group"><label>Bitiş Yılı</label><input id="st-end" type="number" placeholder="Hâlâ oradaysan boş bırak"></div>
+      <div class="form-group"><label>Başlangıç Tarihi</label><input id="st-start-date" placeholder="ör. 15 Temmuz 2035"></div>
+      <div class="form-group"><label>Bitiş Tarihi</label><input id="st-end-date" placeholder="ör. 3 Haziran 2040"></div>
       <div class="form-group full">
         <div class="toggle-row">
           <button class="toggle" id="st-current-toggle" onclick="toggleBtn('st-current-toggle')"></button>
@@ -853,8 +870,15 @@ textarea { resize: vertical; min-height: 80px; }
         </select>
       </div>
       <div class="form-group"><label>Aşama</label><input id="s-euro-stage" placeholder="ör. Çeyrek Final"></div>
-      <div class="form-group"><label>G/B/M (Avrupa)</label><input id="s-euro-wdl" placeholder="ör. 5/1/2"></div>
-      <div class="form-group"><label>Gol A/Y (Avrupa)</label><input id="s-euro-gf-ga" placeholder="ör. 14/8"></div>
+
+      <div class="form-group full">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--muted2);font-weight:500;">Avrupa Maçları</span>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="addEuroMatch()">+ Maç Ekle</button>
+        </div>
+        <div id="euro-matches-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <div id="euro-summary" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(74,158,255,0.07);border:1px solid rgba(74,158,255,0.2);border-radius:8px;font-size:13px;color:var(--muted2);"></div>
+      </div>
 
       <div class="form-group full" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">Bireysel & Taktik</div>
@@ -1068,21 +1092,29 @@ function renderDashboard() {
   // Totals from seasons
   const tots = calcTotals();
   const currentClub = DB.stints.find(s => s.is_current);
+  const startYear = c.career_start_year || DB.stints[0]?.start_year || '?';
   document.getElementById('hero-sub').textContent =
     `${startYear} – Günümüz${currentClub ? ' · ' + currentClub.club_name : ''}`;
+  if (c.league_status || c.euro_status) {
+    document.getElementById('hero-sub').textContent +=
+      [c.league_status ? ' · ' + c.league_status : '', c.euro_status ? ' · ' + c.euro_status : ''].join('');
+  }
 
   const ppg = tots.matches ? (tots.pts / tots.matches).toFixed(2) : '—';
   const winPct = tots.matches ? Math.round(tots.wins / tots.matches * 100) + '%' : '—';
 
-  setEl('st-matches', tots.matches);
-  setEl('st-wins', tots.wins);
-  setEl('st-draws', tots.draws);
-  setEl('st-losses', tots.losses);
-  setEl('st-winpct', winPct);
-  setEl('st-gf', tots.gf);
-  setEl('st-ga', tots.ga);
-  setEl('st-trophies', DB.trophies.length);
-  setEl('st-leagues', DB.seasons.filter(s => s.league_champion).length);
+  const c = DB.career;
+  const or = (manual, auto) => (manual != null && manual !== '') ? manual : auto;
+
+  setEl('st-matches', or(c.manual_matches, tots.matches));
+  setEl('st-wins', or(c.manual_wins, tots.wins));
+  setEl('st-draws', or(c.manual_draws, tots.draws));
+  setEl('st-losses', or(c.manual_losses, tots.losses));
+  setEl('st-winpct', c.manual_wins != null && c.manual_matches != null ? Math.round(c.manual_wins/c.manual_matches*100)+'%' : winPct);
+  setEl('st-gf', or(c.manual_gf, tots.gf));
+  setEl('st-ga', or(c.manual_ga, tots.ga));
+  setEl('st-trophies', or(c.manual_trophies, DB.trophies.length));
+  setEl('st-leagues', or(c.manual_leagues, DB.seasons.filter(s => s.league_champion).length));
   setEl('st-clubs', DB.stints.length);
   setEl('st-seasons', DB.seasons.length);
   setEl('st-ppg', ppg);
@@ -1091,7 +1123,7 @@ function renderDashboard() {
   const ct = document.getElementById('clubs-timeline');
   if (!DB.stints.length) {
     ct.innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;">
-      <button class="btn btn-ghost btn-sm" onclick="openModal('stint-modal')">+ Kulüp Görevi Ekle</button>
+      <button class="btn btn-ghost btn-sm" onclick="editingStintId=null;openModal('stint-modal')">+ Kulüp Görevi Ekle</button>
     </div>`;
   } else {
     ct.innerHTML = `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
@@ -1100,7 +1132,7 @@ function renderDashboard() {
           <div style="font-weight:600;font-size:14px;">${s.club_name}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:3px;">${s.start_year||'?'} – ${s.is_current ? 'Günümüz' : (s.end_year||'?')} · ${s.league||''}</div>
         </div>`).join('')}
-      <button class="btn btn-ghost btn-sm" onclick="openModal('stint-modal')">+ Ekle</button>
+      <button class="btn btn-ghost btn-sm" onclick="editingStintId=null;openModal('stint-modal')">+ Ekle</button>
     </div>`;
   }
 
@@ -1695,11 +1727,42 @@ function renderProfile() {
     const ss = DB.seasons.filter(s => s.club_stint_id === st.id);
     const tr = DB.trophies.filter(t => t.club_name === st.club_name).length;
     const m = ss.reduce((a,s)=>{a.w+=(s.league_wins||0);a.m+=(s.league_played||0);return a},{w:0,m:0});
+
+    // Görev süresi hesapla
+    let tenureStr = '';
+    if (st.start_date) {
+      const parseDate = (str) => {
+        const months = { 'ocak':0,'şubat':1,'mart':2,'nisan':3,'mayıs':4,'haziran':5,'temmuz':6,'ağustos':7,'eylül':8,'ekim':9,'kasım':10,'aralık':11 };
+        const parts = str.trim().toLowerCase().split(/\s+/);
+        if (parts.length === 3) {
+          const d = parseInt(parts[0]);
+          const mo = months[parts[1]];
+          const y = parseInt(parts[2]);
+          if (!isNaN(d) && mo !== undefined && !isNaN(y)) return new Date(y, mo, d);
+        }
+        return null;
+      };
+      const start = parseDate(st.start_date);
+      const end = st.end_date ? parseDate(st.end_date) : new Date();
+      if (start && end) {
+        const days = Math.round((end - start) / (1000 * 60 * 60 * 24));
+        const years = Math.floor(days / 365);
+        const months = Math.floor((days % 365) / 30);
+        if (years > 0) tenureStr = `${years} yıl ${months > 0 ? months + ' ay' : ''} (${days.toLocaleString()} gün)`;
+        else if (months > 0) tenureStr = `${months} ay (${days} gün)`;
+        else tenureStr = `${days} gün`;
+      }
+    } else if (st.start_year) {
+      const endY = st.is_current ? new Date().getFullYear() : (st.end_year || '?');
+      tenureStr = endY !== '?' ? `~${(endY - st.start_year)} yıl` : '';
+    }
+
     return `<div class="match-item">
       <div style="width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:2px;"></div>
       <div style="flex:1">
         <div style="font-weight:600;font-size:14px;">${st.club_name} ${st.is_current?'<span class="badge badge-green">Şu an</span>':''}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;">${st.start_year||'?'} – ${st.is_current?'Günümüz':(st.end_year||'?')} · ${st.league||''}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">${st.start_date||st.start_year||'?'} – ${st.is_current?'Günümüz':(st.end_date||st.end_year||'?')} · ${st.league||''}</div>
+        ${tenureStr ? `<div style="font-size:12px;color:var(--green);margin-top:2px;font-weight:500;">⏱ ${tenureStr}</div>` : ''}
       </div>
       <div style="text-align:right;font-size:12px;color:var(--muted);">
         ${ss.length} sezon · ${tr} kupa<br>
@@ -1713,41 +1776,166 @@ function renderProfile() {
 // SAVE / DELETE
 // ═══════════════════════════════════════════
 async function saveCareerSettings() {
-  const data = { manager_name: v('cr-name'), birth_place: v('cr-birth'), birth_year: num('cr-byear'), career_start_year: num('cr-cyear') };
+  const data = {
+    manager_name: v('cr-name'),
+    birth_place: v('cr-birth'),
+    birth_year: num('cr-byear'),
+    career_start_year: num('cr-cyear'),
+    manual_matches: num('cr-matches'),
+    manual_wins: num('cr-wins'),
+    manual_draws: num('cr-draws'),
+    manual_losses: num('cr-losses'),
+    manual_gf: num('cr-gf'),
+    manual_ga: num('cr-ga'),
+    manual_trophies: num('cr-trophies'),
+    manual_leagues: num('cr-leagues'),
+    league_status: v('cr-league-status'),
+    euro_status: v('cr-euro-status')
+  };
   await api(`careers?id=eq.${DB.career.id}`, { method: 'PATCH', body: JSON.stringify(data) });
   closeModal('career-modal'); await loadAll(); renderDashboard(); renderProfile();
+}
+
+// Kariyer ayarları modalını doldur
+function openCareerModal() {
+  const c = DB.career;
+  const setVal = (id, val) => { const el = document.getElementById(id); if(el && val != null) el.value = val; };
+  setVal('cr-name', c.manager_name);
+  setVal('cr-birth', c.birth_place);
+  setVal('cr-byear', c.birth_year);
+  setVal('cr-cyear', c.career_start_year);
+  setVal('cr-matches', c.manual_matches);
+  setVal('cr-wins', c.manual_wins);
+  setVal('cr-draws', c.manual_draws);
+  setVal('cr-losses', c.manual_losses);
+  setVal('cr-gf', c.manual_gf);
+  setVal('cr-ga', c.manual_ga);
+  setVal('cr-trophies', c.manual_trophies);
+  setVal('cr-leagues', c.manual_leagues);
+  setVal('cr-league-status', c.league_status);
+  setVal('cr-euro-status', c.euro_status);
+  openModal('career-modal');
+}
+
+// ── EURO MATCH SYSTEM ──
+let euroMatches = [];
+
+function addEuroMatch() {
+  const id = Date.now();
+  euroMatches.push({ id, opp: '', gf: '', ga: '', ha: 'Ev' });
+  renderEuroMatches();
+}
+
+function removeEuroMatch(id) {
+  euroMatches = euroMatches.filter(m => m.id !== id);
+  renderEuroMatches();
+}
+
+function renderEuroMatches() {
+  const list = document.getElementById('euro-matches-list');
+  const summary = document.getElementById('euro-summary');
+  if (!list) return;
+
+  list.innerHTML = euroMatches.map(m => `
+    <div style="display:grid;grid-template-columns:1fr 60px 60px 80px 32px;gap:6px;align-items:center;">
+      <input placeholder="Rakip" value="${m.opp||''}" oninput="updateEuroMatch(${m.id},'opp',this.value)"
+        style="padding:7px 10px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-size:13px;font-family:'Space Grotesk',sans-serif;">
+      <input type="number" min="0" placeholder="Biz" value="${m.gf!==''?m.gf:''}" oninput="updateEuroMatch(${m.id},'gf',this.value)"
+        style="padding:7px 8px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:7px;color:var(--green);font-size:13px;font-weight:700;text-align:center;font-family:'Space Grotesk',sans-serif;">
+      <input type="number" min="0" placeholder="Rkp" value="${m.ga!==''?m.ga:''}" oninput="updateEuroMatch(${m.id},'ga',this.value)"
+        style="padding:7px 8px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:7px;color:var(--red);font-size:13px;font-weight:700;text-align:center;font-family:'Space Grotesk',sans-serif;">
+      <select onchange="updateEuroMatch(${m.id},'ha',this.value)"
+        style="padding:7px 6px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-size:12px;font-family:'Space Grotesk',sans-serif;">
+        <option value="Ev" ${m.ha==='Ev'?'selected':''}>Ev</option>
+        <option value="Deplasman" ${m.ha==='Deplasman'?'selected':''}>Dep.</option>
+        <option value="Nötr" ${m.ha==='Nötr'?'selected':''}>Nötr</option>
+      </select>
+      <button onclick="removeEuroMatch(${m.id})" style="background:var(--red-dim);border:none;border-radius:6px;color:var(--red);cursor:pointer;width:32px;height:32px;font-size:14px;">✕</button>
+    </div>`).join('');
+
+  // Özet hesapla
+  const played = euroMatches.filter(m => m.gf !== '' && m.ga !== '');
+  if (played.length) {
+    const w = played.filter(m => Number(m.gf) > Number(m.ga)).length;
+    const d = played.filter(m => Number(m.gf) === Number(m.ga)).length;
+    const l = played.filter(m => Number(m.gf) < Number(m.ga)).length;
+    const gf = played.reduce((a,m) => a + Number(m.gf), 0);
+    const ga = played.reduce((a,m) => a + Number(m.ga), 0);
+    summary.style.display = 'block';
+    summary.innerHTML = `<span style="color:var(--green);font-weight:700;">${w}G</span> ${d}B <span style="color:var(--red);font-weight:700;">${l}M</span> &nbsp;·&nbsp; ${gf} – ${ga} gol &nbsp;·&nbsp; ${played.length} maç`;
+  } else {
+    summary.style.display = 'none';
+  }
+}
+
+function updateEuroMatch(id, field, val) {
+  const m = euroMatches.find(x => x.id === id);
+  if (m) { m[field] = val; renderEuroMatches(); }
 }
 
 async function saveStint() {
   const club = v('st-club'); if (!club) return alert('Kulüp adı zorunlu!');
   const isCurrent = document.getElementById('st-current-toggle').classList.contains('on');
-  const data = { career_id: DB.career.id, club_name: club, nation: v('st-nation'), league: v('st-league'), start_year: num('st-start'), end_year: num('st-end'), is_current: isCurrent, notes: v('st-notes') };
-  await api('club_stints', { method: 'POST', body: JSON.stringify(data) });
+  const data = { career_id: DB.career.id, club_name: club, nation: v('st-nation'), league: v('st-league'), start_year: num('st-start'), end_year: num('st-end'), start_date: v('st-start-date'), end_date: v('st-end-date'), is_current: isCurrent, notes: v('st-notes') };
+  if (editingStintId) {
+    await api(`club_stints?id=eq.${editingStintId}`, { method: 'PATCH', body: JSON.stringify(data) });
+    editingStintId = null;
+  } else {
+    await api('club_stints', { method: 'POST', body: JSON.stringify(data) });
+  }
   closeModal('stint-modal');
-  ['st-club','st-nation','st-league','st-start','st-end','st-notes'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['st-club','st-nation','st-league','st-start','st-end','st-start-date','st-end-date','st-notes'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   document.getElementById('st-current-toggle').classList.remove('on');
   await loadAll(); renderDashboard(); renderSeasons(); renderProfile(); populateSelects();
 }
 
-async function openStintEdit(id) { openModal('stint-modal'); }
+let editingStintId = null;
+
+async function openStintEdit(id) {
+  const s = DB.stints.find(x => x.id === id);
+  if (!s) return;
+  editingStintId = id;
+  document.getElementById('st-club').value = s.club_name || '';
+  document.getElementById('st-nation').value = s.nation || '';
+  document.getElementById('st-league').value = s.league || '';
+  document.getElementById('st-start').value = s.start_year || '';
+  document.getElementById('st-end').value = s.end_year || '';
+  document.getElementById('st-start-date').value = s.start_date || '';
+  document.getElementById('st-end-date').value = s.end_date || '';
+  document.getElementById('st-notes').value = s.notes || '';
+  if (s.is_current) document.getElementById('st-current-toggle').classList.add('on');
+  else document.getElementById('st-current-toggle').classList.remove('on');
+  openModal('stint-modal');
+}
 
 async function saveSeason() {
   const label = v('s-label'); if (!label) return alert('Sezon zorunlu!');
   const stintId = document.getElementById('s-club-select').value || null;
   const stint = DB.stints.find(s => s.id === stintId);
   const isChamp = document.getElementById('s-champ-toggle').classList.contains('on');
-  const euroWDL = v('s-euro-wdl')?.split('/').map(Number) || [];
-  const euroGFGA = v('s-euro-gf-ga')?.split('/').map(Number) || [];
+
+  // Euro hesapla
+  const played = euroMatches.filter(m => m.gf !== '' && m.ga !== '');
+  const euro_wins = played.filter(m => Number(m.gf) > Number(m.ga)).length;
+  const euro_draws = played.filter(m => Number(m.gf) === Number(m.ga)).length;
+  const euro_losses = played.filter(m => Number(m.gf) < Number(m.ga)).length;
+  const euro_gf = played.reduce((a,m) => a + Number(m.gf), 0);
+  const euro_ga = played.reduce((a,m) => a + Number(m.ga), 0);
+
   const data = {
     career_id: DB.career.id, club_stint_id: stintId || null,
-    season_label: label, club_name: stint?.club_name || v('s-label'),
+    season_label: label, club_name: stint?.club_name || label,
     league_position: num('s-pos'), league_points: num('s-pts'),
     league_wins: num('s-w'), league_draws: num('s-d'), league_losses: num('s-l'),
     league_played: num('s-played'), league_goals_for: num('s-gf'), league_goals_against: num('s-ga'),
     league_champion: isChamp,
     europe_competition: v('s-euro-comp'), europe_stage: v('s-euro-stage'),
-    europe_wins: euroWDL[0]||null, europe_draws: euroWDL[1]||null, europe_losses: euroWDL[2]||null,
-    europe_goals_for: euroGFGA[0]||null, europe_goals_against: euroGFGA[1]||null,
+    europe_played: played.length || null,
+    europe_wins: played.length ? euro_wins : null,
+    europe_draws: played.length ? euro_draws : null,
+    europe_losses: played.length ? euro_losses : null,
+    europe_goals_for: played.length ? euro_gf : null,
+    europe_goals_against: played.length ? euro_ga : null,
     top_scorer: v('s-scorer'), top_scorer_goals: num('s-scorer-g'),
     top_assister: v('s-assister'), top_assister_assists: num('s-assister-a'),
     most_appearances: v('s-apps'), most_appearances_count: num('s-apps-c'),
@@ -1763,7 +1951,15 @@ async function saveSeason() {
   }
   closeModal('season-modal');
   document.getElementById('s-champ-toggle').classList.remove('on');
+  euroMatches = [];
+  renderEuroMatches();
   await loadAll(); renderDashboard(); renderSeasons(); renderProfile(); populateSelects();
+}
+
+function openSeasonModalFresh() {
+  euroMatches = [];
+  renderEuroMatches();
+  openModal('season-modal');
 }
 
 async function saveMatch() {
