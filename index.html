@@ -1085,11 +1085,9 @@ function showPage(page) {
 // ═══════════════════════════════════════════
 function renderDashboard() {
   const c = DB.career;
-  const startYear = c.career_start_year || '?';
   document.getElementById('hero-eyebrow').textContent = 'Teknik Direktörlük Kariyeri';
   document.getElementById('hero-title').textContent = c.manager_name || 'Mert Gürer';
 
-  // Totals from seasons
   const tots = calcTotals();
   const currentClub = DB.stints.find(s => s.is_current);
   const startYear = c.career_start_year || DB.stints[0]?.start_year || '?';
@@ -1102,8 +1100,6 @@ function renderDashboard() {
 
   const ppg = tots.matches ? (tots.pts / tots.matches).toFixed(2) : '—';
   const winPct = tots.matches ? Math.round(tots.wins / tots.matches * 100) + '%' : '—';
-
-  const c = DB.career;
   const or = (manual, auto) => (manual != null && manual !== '') ? manual : auto;
 
   setEl('st-matches', or(c.manual_matches, tots.matches));
