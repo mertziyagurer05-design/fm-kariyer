@@ -1116,13 +1116,21 @@ async function openSeasonDetail(id) {
   const tots_g = (s.league_goals_for||0) + (s.europe_goals_for||0);
   const tots_ga = (s.league_goals_against||0) + (s.europe_goals_against||0);
   const pct = tots_m ? Math.round(tots_w/tots_m*100) : 0;
+  const gpg = tots_m ? (tots_g / tots_m).toFixed(2) : '—';
+  const gapg = tots_m ? (tots_ga / tots_m).toFixed(2) : '—';
+  const lgpg = s.league_played ? (s.league_goals_for / s.league_played).toFixed(2) : '—';
+  const lgapg = s.league_played ? (s.league_goals_against / s.league_played).toFixed(2) : '—';
   document.getElementById('sd-stats').innerHTML = `
     <div class="stat-box"><div class="stat-val">${s.league_position||'?'}</div><div class="stat-lbl">Lig Sıralaması</div></div>
     <div class="stat-box"><div class="stat-val">${s.league_points||'?'}</div><div class="stat-lbl">Puan</div></div>
     <div class="stat-box"><div class="stat-val green">${pct}%</div><div class="stat-lbl">Galibiyet %</div></div>
-    <div class="stat-box"><div class="stat-val">${tots_g}</div><div class="stat-lbl">Attığı Gol</div></div>
-    <div class="stat-box"><div class="stat-val">${tots_ga}</div><div class="stat-lbl">Yediği Gol</div></div>
     <div class="stat-box"><div class="stat-val">${tots_m}</div><div class="stat-lbl">Toplam Maç</div></div>
+    <div class="stat-box"><div class="stat-val">${tots_g}</div><div class="stat-lbl">Attığı Gol</div></div>
+    <div class="stat-box"><div class="stat-val">${tots_ga}</div><div class="stat-lbl">Yenilen Gol</div></div>
+    <div class="stat-box"><div class="stat-val green">${gpg}</div><div class="stat-lbl">Maç Başı Gol</div></div>
+    <div class="stat-box"><div class="stat-val">${gapg}</div><div class="stat-lbl">Maç Başı Yenilen</div></div>
+    <div class="stat-box"><div class="stat-val green">${lgpg}</div><div class="stat-lbl">Lig MB Gol</div></div>
+    <div class="stat-box"><div class="stat-val">${lgapg}</div><div class="stat-lbl">Lig MB Yenilen</div></div>
   `;
 
   showSeasonTab('overview');
